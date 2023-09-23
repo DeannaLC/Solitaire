@@ -21,6 +21,17 @@ class Card{
         name = y;
         val = z;
     }
+
+    public:
+    Card(){
+        name = "ERROR";
+    }
+
+    public:
+    void setName(string n){
+        name = n;
+    }
+
     public:
     string getSuit(){
          return suit;
@@ -37,40 +48,60 @@ class Card{
     }
 
     public:
+    bool getShown(){
+        return shown;
+    }
+
+    public:
     void setShown(bool x){
         shown = x;
     }
 
     public:
     string toString(){
-        return "" + name + " of " + suit;
+        //cout << "reached \n";
+        if (val == 9){
+           // cout << name + suit.substr(0, 1);
+            return name + suit.substr(0, 1);
+        }
+        //name.substr(0, 1) + suit.substr(0, 1);
+        return name.substr(0, 1) + suit.substr(0, 1);
     }
 
+    public:
+    bool oppositeSuits(Card check){
+        return (((check.suit == "Hearts") || (check.suit == "Diamonds")) && ((suit == "Clubs") || (suit == "Spades"))) || (((check.suit == "Clubs") || (check.suit == "Spades")) && ((suit == "Diamonds") || (suit == "Hearts")));
+    }
+
+    //true if card in parameter(check) is one higher
+    public:
+    bool oneHigher(Card check){
+        return (check.val - 1) == val;
+    }
 };
 
 class Deck{
     vector<Card> deck;
-    vector<string> cardNames{"ace", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "jack", "queen", "king"};
+    vector<string> cardNames{"Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"};
 
     public:
     Deck(){
         for (int i = 0; i < 13; i = i + 1){
-            deck.push_back(Card("hearts", cardNames[i], i));
+            deck.push_back(Card("Hearts", cardNames[i], i));
         }
         for (int i = 0; i < 13; i = i + 1){
-            deck.push_back(Card("diamonds", cardNames[i], i));
+            deck.push_back(Card("Diamonds", cardNames[i], i));
         }
         for (int i = 0; i < 13; i = i + 1){
-            deck.push_back(Card("spades", cardNames[i], i));
+            deck.push_back(Card("Spades", cardNames[i], i));
         }
         for (int i = 0; i < 13; i = i + 1){
-            deck.push_back(Card("hearts", cardNames[i], i));
+            deck.push_back(Card("Hearts", cardNames[i], i));
         }
     }
 
     public:
     Deck(int z){
-
     }
 
     public:
@@ -84,8 +115,7 @@ class Deck{
 
     public:
     Card randomCard(){
-        srand(time(0));
-        int randIdx = rand() % 52;
+        int randIdx = rand() % deck.size();
         Card ret = deck[randIdx];
         deck.erase(deck.begin() + randIdx);
         return ret;
@@ -105,9 +135,9 @@ class Deck{
         Card save2 = Card("", "", 0);
         for (int i = 0; i < deck.size(); i = i + 1){
             randIdx1 = rand() % deck.size();
-            cout << randIdx1 << "\n";
+            //cout << randIdx1 << "\n";
             randIdx2 = rand() % deck.size();
-            cout << randIdx2 << "\n";
+            //cout << randIdx2 << "\n";
             save1 = deck[randIdx1];
             save2 = deck[randIdx2];
             deck[randIdx1] = save2;
@@ -143,9 +173,11 @@ class Solitaire{
     vector<Card> ace2;
     vector<Card> ace3;
     vector<Card> ace4;
+    vector<vector<Card>> allBins;
 
     public:
     Solitaire(){
+        srand(time(0));
         bin1.push_back(deck.randomCard());
 
         bin2.push_back(deck.randomCard());
@@ -181,23 +213,24 @@ class Solitaire{
         bin7.push_back(deck.randomCard());
         bin7.push_back(deck.randomCard());
 
+        allBins = vector<vector<Card>>{bin1, bin2, bin3, bin4, bin5, bin6, bin7};
         deck.shuffleDeck();
     }
 
     public:
     void declareShown(){
-        bin1[bin1.size()].setShown(true);
-        bin2[bin2.size()].setShown(true);
-        bin3[bin3.size()].setShown(true);
-        bin4[bin4.size()].setShown(true);
-        bin5[bin5.size()].setShown(true);
-        bin6[bin6.size()].setShown(true);
-        bin7[bin7.size()].setShown(true);
+        Card change;
+        vector<Card> row;
+        for (int i = 0; i < 7; i = i + 1){
+            row = allBins[i];
+            row[row.size() - 1].setShown(true);
+            allBins[i] = row;
+        }
     }
 
     public:
     void clearAllShown(){
-        Card cur = Card("", "", 1);
+        Card cur = Card();
         for (int i = 0; i < masterCopy.getDeck().size(); i = i + 1){
             cur = masterCopy.getDeck()[i];
             cur.setShown(false);
@@ -205,56 +238,79 @@ class Solitaire{
     }
 
     public:
-    int maxBinSize(){
+    int largestBinSize(){
         int curMax = 0;
         int curVal = 0;
         for (int i = 0; i < 7; i = i + 1){
-            
+            curVal = allBins[i].size();
+            if (allBins[i].size() > curMax)
+                curMax = curVal;
         }
         return curMax;
     }
 
     public:
-    string toString(){
-        string ret = "";
+    vector<vector<Card>> getAllBins(){
+        return allBins;
+    }
 
+    public:
+    bool cardMatch(Card onBoard, Card inDeck){
+        return onBoard.oppositeSuits(inDeck) && onBoard.oneHigher(inDeck);
+    }
+
+    string vectorToString(vector<Card> h){
+        string ret = "";
+        Card curCard = Card();
+        for (int i = 0; i < h.size(); i = i + 1){
+            curCard = h[i];
+            ret = ret + curCard.toString();
+        }
         return ret;
+    }
+
+    public:
+    Deck getDeck(){
+        return deck;
+    }
+
+    public:
+    string toString(){
+        declareShown();
+        string square = "";
+        string grid = "";
+        vector<Card> curBin;
+        Card curCard;
+        for (int i = 0; i < largestBinSize(); i = i + 1){
+                for (int k = 0; k < 7; k = k + 1){ 
+                    curBin = allBins[k];
+                    //cout << vectorToString(curBin) + "\n";
+                    if (curBin.size() > i){
+                        curCard = curBin[i];
+                        if (curCard.getShown() == true){
+                            square = " " + curCard.toString();
+                            if (square.length() == 4)
+                                square = square + " ";
+                            else
+                                square = square + "  ";
+                        }
+                        else
+                            square = "  x  ";
+                    }
+                    else{
+                        square = "     ";
+                    }
+                    grid = grid + square;
+                }
+            grid = grid + "\n";
+        }
+        return grid;
     }
 };
 
 int main(){
     Deck d = Deck();
-    /*Card x = d.randomCard();
-    cout << x.getSuit() << "\n";
-    cout << x.getName() << "\n";
-    cout << x.getVal() << "\n";
-    cout << d.getDeck().size() << "\n";
-
-    //x = d.getDeck()[0];
-    x = d.randomCard();
-    cout << x.getName() << "\n";
-    //d.shuffle();
-    //x = d.getDeck()[0];
-    x = d.randomCard();
-    cout << x.getName() << "\n";
-    //d.shuffle();
-    //x = d.getDeck()[0];
-    x = d.randomCard();
-    cout << x.getName() << "\n";*/
-    //random_device rd;
-    //uniform_int_distribution<int> dist(1, 52);
-    //int randIdx1 = rd();
-    //int randIdx2 = rd();
-    //cout << rd() << "\n";
-    //cout << rd() << "\n";
-    //system("pause");
-
-    srand(time(0));
-    int idx1 = rand() % 52;
-    int idx2 = rand() % 52;
-    cout << idx1 << "\n";
-    cout << idx2;
-    cout << d.toString() << "\n";
-    d.shuffleDeck();
-    cout << d.toString();
+    Solitaire s = Solitaire();
+    cout << s.toString();
+    cout << s.getDeck().getDeck().size();
 }
